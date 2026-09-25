@@ -34,7 +34,7 @@ or empty:
 - [x] `python app.py index` — 88 documents → 88 chunks (800-char fallback chunker never splits these, since docs average 317 chars)
 - [x] `python app.py ask "is the housing lottery random?"` — ran end to end: best distance 0.254 (well under 0.6 cutoff), grounded answer, cited `admin_housing_lottery.txt`
 - [x] `python app.py --corpus campus_life chunks -n 1` — **88 chunks total** (write this number down for the end-of-session activity)
-- [ ] Commit **(1 of 4 required)**
+- [x] Commit **(1 of 4 required)**
 
 ## Milestone 2 — Acceptance criteria (~75 min)
 
@@ -43,16 +43,16 @@ or empty:
 - [x] Write criterion 4 (chunk-to-document ratio, grounded in the 88 docs -> 88 chunks index output)
 - [x] Write criterion 5 (top-1 source-attribution precision — targets the templated near-duplicate docs risk)
 - [x] Self-check: each criterion names a testable procedure from the sentence alone
-- [ ] Commit **(2 of 4 required)** — `questions.py` and `criteria.md`
+- [x] Commit **(2 of 4 required)** — `questions.py` and `criteria.md`
 
 ## Milestone 3 — Swap in your own chunker (~60 min)
 
-- [ ] Read the `python app.py index` summary line (chunk count, avg/min/max length) for the chosen corpus and think about what it implies
-- [ ] Decide chunk size + overlap for this corpus's shape, and write down *why* before coding
-- [ ] Implement the new strategy in `chunker.py::split_documents` (not `fallback_split` — that stays as the fallback); update `produced_by` to reflect the new function name
-- [ ] `python app.py chunks -n 5` — read the 5 sampled chunks, check each reads as a complete thought
-- [ ] Paste those 5 chunks into README's **Sample Chunks** section, each labeled with source file + producing function
-- [ ] Re-run `python app.py index` with the new chunker
+- [x] Read the `python app.py index` summary line (chunk count, avg/min/max length) for the chosen corpus and think about what it implies (88 -> 88 chunks; measured actual max doc length: 549 chars)
+- [x] Decide chunk size + overlap for this corpus's shape, and write down *why* before coding (600 / 80, just above the measured max)
+- [x] Implement the new strategy in `chunker.py::split_documents` — paragraph packing with sentence-boundary fallback for oversized paragraphs (not `fallback_split` — that stays as the fallback); `produced_by` now reads `chunker.py::split_documents`
+- [x] `python app.py chunks -n 5` — read the 5 sampled chunks, all read as complete thoughts
+- [x] Paste those 5 chunks into README's **Sample Chunks** section, each labeled with source file + producing function
+- [x] Re-run `python app.py index` with the new chunker
 - [ ] Commit **(3 of 4 required)**
 
 ## Milestone 4 — Tune retrieval & ground the answers (~85 min)

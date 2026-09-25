@@ -80,24 +80,108 @@ def fallback_split(
     return chunks
 
 
+def _split_into_sentences(text: str) -> list[str]:
+    """Split on sentence-ending punctuation followed by whitespace."""
+    import re
+
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    return [s for s in sentences if s]
+
+
+def _pack_sentences(paragraph: str, chunk_size: int) -> list[str]:
+    """
+    Pack a single over-long paragraph into pieces, breaking on sentence
+    boundaries rather than mid-sentence.
+    """
+    pieces: list[str] = []
+    current = ""
+    for sentence in _split_into_sentences(paragraph):
+        candidate = f"{current} {sentence}".strip() if current else sentence
+        if len(candidate) <= chunk_size or not current:
+            current = candidate
+        else:
+            pieces.append(current)
+            current = sentence
+    if current:
+        pieces.append(current)
+    return pieces
+
+
+def _pack_paragraphs(paragraphs: list[str], chunk_size: int) -> list[str]:
+    """
+    Greedily pack whole paragraphs into pieces up to chunk_size. A paragraph
+    that alone exceeds chunk_size falls back to sentence-level packing so a
+    single sentence is never split in half.
+    """
+    pieces: list[str] = []
+    current = ""
+    for paragraph in paragraphs:
+        candidate = f"{current}\n\n{paragraph}" if current else paragraph
+        if len(candidate) <= chunk_size:
+            current = candidate
+            continue
+        if current:
+            pieces.append(current)
+            current = ""
+        if len(paragraph) <= chunk_size:
+            current = paragraph
+        else:
+            pieces.extend(_pack_sentences(paragraph, chunk_size))
+    if current:
+        pieces.append(current)
+    return pieces
+
+
+def _apply_overlap(pieces: list[str], overlap: int) -> list[str]:
+    """
+    Carry the tail of each piece into the start of the next one, so a split
+    document doesn't lose context at the seam. Single-piece documents (the
+    normal case for campus_life) are untouched.
+    """
+    if len(pieces) <= 1 or overlap <= 0:
+        return pieces
+
+    result = [pieces[0]]
+    for previous, piece in zip(pieces, pieces[1:]):
+        tail = previous[-overlap:]
+        space = tail.find(" ")
+        if space != -1:
+            tail = tail[space + 1 :]
+        result.append(f"{tail} {piece}".strip() if tail else piece)
+    return result
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Chunk campus_life posts by paragraph, not by character count.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
-
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Every one of the corpus's 88 posts is under 600 characters and already
+    reads as a single self-contained thought (a dining hall's hours, one rule
+    about a deadline) — the finding from Milestone 1's index summary. So the
+    strategy here is: keep a whole post as one chunk whenever it fits inside
+    config.CHUNK_SIZE, and only split on paragraph (then sentence) boundaries
+    for the rare post that runs long, instead of cutting at a fixed offset
+    the way fallback_split does. config.CHUNK_OVERLAP only matters for those
+    rare multi-piece documents.
     """
-    return fallback_split(documents)
+    chunk_size = config.CHUNK_SIZE
+    overlap = config.CHUNK_OVERLAP
+
+    chunks: list[Chunk] = []
+    for doc in documents:
+        paragraphs = [p.strip() for p in doc.text.split("\n\n") if p.strip()]
+        pieces = _apply_overlap(_pack_paragraphs(paragraphs, chunk_size), overlap)
+        for index, piece in enumerate(pieces):
+            chunks.append(
+                Chunk(
+                    text=piece,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
