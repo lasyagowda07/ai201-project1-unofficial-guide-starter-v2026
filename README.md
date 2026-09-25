@@ -124,27 +124,45 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
 <!-- One complete question and answer, pasted as text, with the source line
      visible. Milestone 4. -->
 
-**Question:**
+**Question:** What is the latest I can declare a course pass/fail?
 
 **Answer:**
 
 ```
+You can declare a course pass/fail as late as week eight, after you've seen your midterm.
+
+Source: admin_pass_fail_option.txt
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** 0.6 (the starter's default — I measured my own
+distances rather than assuming it and it held up)
 
-<!-- The number you set in config.py, and how you got there.
+I ran all 5 `QUESTIONS` and all 5 `OUT_OF_SCOPE` questions through `retrieve`
+and recorded the best (lowest) distance for each. The two groups separated
+cleanly with a wide gap between them:
 
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
+- In-corpus best distances: 0.255 – 0.429
+- Out-of-scope best distances: 0.825 – 0.934
+- Gap: roughly 0.40 wide, between 0.429 and 0.825
 
-     Milestone 4. -->
+0.6 sits almost exactly in the middle of that gap (about 0.17 above the
+worst in-corpus question, about 0.22 below the best out-of-scope one), so I
+kept the default rather than moving it — there was no evidence to justify
+changing it, and doing so anyway would have been picking a number instead of
+reading one off the data.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| What do students say about wait times at Kestrel Commons during lunch? | Yes | 0.259 |
+| Are the midterms curved in CS 210? | Yes | 0.429 |
+| Why does Old Brewhouse have a reputation for being noisy? | Yes | 0.308 |
+| What is the latest I can declare a course pass/fail? | Yes | 0.255 |
+| Does unused printing quota roll over to the next semester? | Yes | 0.369 |
+| What is the capital of Mongolia? | No | 0.825 |
+| How do I change the oil in a diesel engine? | No | 0.934 |
+| Who won the 1994 World Cup? | No | 0.886 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.844 |
+| How do I write a for loop in Rust? | No | 0.896 |
 
 ## How I Used AI
 

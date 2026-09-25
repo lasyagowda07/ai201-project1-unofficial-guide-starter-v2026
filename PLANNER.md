@@ -57,12 +57,13 @@ or empty:
 
 ## Milestone 4 — Tune retrieval & ground the answers (~85 min)
 
-- [ ] `python app.py retrieve "<question>"` on 3 of the 5 test questions — read the returned chunks + distances for relevance
-- [ ] Adjust `config.TOP_K` (starter default 5) if needed
-- [ ] Run all 5 `QUESTIONS` and all 5 `OUT_OF_SCOPE` questions through `retrieve`, record the best distance for each
-- [ ] Find the gap between the two groups; set `config.THRESHOLD` inside it (starter default 0.6, typical range 0.45–0.75)
-- [ ] Review `GROUNDING_INSTRUCTION` in `generate.py` — use `python app.py ask "..." --show-prompt` to see the assembled prompt; tighten wording if answers drift from sources
-- [ ] Paste one full question + grounded answer (with source line) into README's **Sample Answer** section, plus the chosen cutoff and a description of the two distance groups
+- [x] `python app.py retrieve "<question>"` on 3 of the 5 test questions — top-1 was the correct source in all 3, distances well under 0.6
+- [x] Adjust `config.TOP_K` (starter default 5) — kept at 5, no evidence it needed changing
+- [x] Run all 5 `QUESTIONS` and all 5 `OUT_OF_SCOPE` questions through `retrieve`, record the best distance for each — in-corpus 0.255-0.429, out-of-scope 0.825-0.934, wide clean gap
+- [x] Find the gap between the two groups; set `config.THRESHOLD` inside it — kept 0.6 (already centered in the measured gap, confirmed rather than assumed)
+- [x] Review `GROUNDING_INSTRUCTION` in `generate.py` — checked via `--show-prompt`; model correctly ignored an irrelevant padding chunk and cited only the right source, no tightening needed
+- [x] Paste one full question + grounded answer (with source line) into README's **Sample Answer** section, plus the chosen cutoff, the full 10-row distance table, and description of the two groups
+- [x] Sanity-checked live: out-of-scope question refused with 0 model calls
 - [ ] Commit **(4 of 4 required — minimum met)**
 
 ## Milestone 5 — Write it up & submit (~45 min)
