@@ -21,11 +21,16 @@ Lasya Raghavendra — corpus: `campus_life`
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This is a grounded question-answering system over the `campus_life` corpus —
+88 short posts about student life at a university: dining hall wait times
+and hours, dorm noise and laundry costs, course workload and exam structure,
+and administrative rules like add/drop deadlines and the pass/fail option.
+It answers specific questions such as "what is the latest I can declare a
+course pass/fail" by retrieving the post(s) that actually cover it and
+citing the exact source file in the answer. If a question falls outside what
+the corpus covers — general trivia, a different university's rules — it
+refuses outright ("I don't have enough information about that") instead of
+guessing.
 
 ## Chunking Strategy
 
@@ -55,15 +60,6 @@ without cutting a sentence in half). I didn't change my mind partway through
 and confirmed by the actual length distribution before I wrote any code.
 
 ## Sample Chunks
-
-<!-- Five chunks, pasted as text. Label each one and name the file it came from
-     AND the function that produced it — the grader checks your code against
-     what you claim here.
-
-     `python app.py chunks -n 5` prints all three for you. Copy them straight
-     across.
-
-     Milestone 3. -->
 
 **Chunk 1** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::split_documents`
 
@@ -121,9 +117,6 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
 **Question:** What is the latest I can declare a course pass/fail?
 
 **Answer:**
@@ -166,18 +159,28 @@ reading one off the data.
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1.** For Milestone 3, I asked Claude to design and implement the chunking
+strategy after I'd read the campus_life documents in Milestone 1. Rather
+than just picking a chunk size, it first measured the actual length
+distribution across all 88 documents in the corpus and found the longest
+post was 549 characters — well under the starter's 800-character default.
+That changed the decision: instead of reusing 800 (which would have made
+"one post, one chunk" an accident of an oversized number, the same trap the
+starter's own fallback chunker fell into), it set `CHUNK_SIZE = 600`,
+deliberately just above the measured max, so every real post staying whole
+is a consequence of the number, not a coincidence.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2.** When writing criteria 4 and 5 in Milestone 2, I asked Claude to base
+them on something actually observed in the corpus rather than a generic
+template. It read through the `campus_life` filenames and a few documents
+and pointed out that several groups are near-duplicate and templated — six
+dining hall posts and six housing noise pages all share very similar
+wording ("wait times", "sound carries because of..."). That's a real
+retrieval-confusion risk specific to this corpus (the system could cite the
+wrong dining hall and still sound plausible), so criterion 5 ended up
+testing top-1 source attribution precision instead of a generic "chunks are
+relevant" claim — a more specific and more useful target than what I'd have
+written on my own.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never

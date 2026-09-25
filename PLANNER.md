@@ -64,15 +64,15 @@ or empty:
 - [x] Review `GROUNDING_INSTRUCTION` in `generate.py` — checked via `--show-prompt`; model correctly ignored an irrelevant padding chunk and cited only the right source, no tightening needed
 - [x] Paste one full question + grounded answer (with source line) into README's **Sample Answer** section, plus the chosen cutoff, the full 10-row distance table, and description of the two groups
 - [x] Sanity-checked live: out-of-scope question refused with 0 model calls
-- [ ] Commit **(4 of 4 required — minimum met)**
+- [x] Commit **(4 of 4 required — minimum met)**
 
 ## Milestone 5 — Write it up & submit (~45 min)
 
-- [ ] Fill README's **What This Does** section (corpus + kinds of questions answered)
-- [ ] Fill README's **How I Used AI** section — two specific moments (what was asked, what came back, what was changed)
-- [ ] Verify: `criteria.md` present with all 5 criteria + reasons; README has all 5 sections filled; ≥4 new commits exist
-- [ ] Push to the `lasyagowda07` fork
-- [ ] Submit the fork's URL through the Course Portal (write it down — Unit 2 reuses the same repo)
+- [x] Fill README's **What This Does** section (corpus + kinds of questions answered)
+- [x] Fill README's **How I Used AI** section — two specific moments (chunk-size decision driven by measuring real doc lengths; criteria 4/5 grounded in spotting templated near-duplicate docs)
+- [x] Verify: `criteria.md` present with all 5 criteria + reasons; README has all 5 Unit 1 sections filled, no leftover placeholders; 4 new commits exist beyond the staff baseline
+- [ ] Push to the `lasyagowda07` fork (commit 5, this write-up pass)
+- [ ] Submit the fork's URL through the Course Portal (write it down — Unit 2 reuses the same repo) — **user action, not automatable**
 
 ## Optional stretch features (not started)
 
