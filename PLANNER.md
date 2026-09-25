@@ -38,11 +38,11 @@ or empty:
 
 ## Milestone 2 — Acceptance criteria (~75 min)
 
-- [ ] Write 5 specific test questions with right answers into `questions.py::QUESTIONS`, each with an `expects` phrase
-- [ ] In `criteria.md`, write the "Why this target" reason under criteria 1, 2, and 3
-- [ ] Write criterion 4 (about chunk size/quality — something countable or observable)
-- [ ] Write criterion 5 (your own choice) — both with a target and a reason
-- [ ] Self-check: could someone else test each criterion from the sentence alone? (Optional: paste all 5 into a fresh chat and ask it to describe how it'd test each one, without suggesting improvements)
+- [x] Write 5 specific test questions with right answers into `questions.py::QUESTIONS`, each with an `expects` phrase (wait times, CS 210 curving, Old Brewhouse noise, pass/fail deadline, printing rollover)
+- [x] In `criteria.md`, write the "Why this target" reason under criteria 1, 2, and 3
+- [x] Write criterion 4 (chunk-to-document ratio, grounded in the 88 docs -> 88 chunks index output)
+- [x] Write criterion 5 (top-1 source-attribution precision — targets the templated near-duplicate docs risk)
+- [x] Self-check: each criterion names a testable procedure from the sentence alone
 - [ ] Commit **(2 of 4 required)** — `questions.py` and `criteria.md`
 
 ## Milestone 3 — Swap in your own chunker (~60 min)
