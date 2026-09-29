@@ -446,17 +446,62 @@ Still Broken** and **What I'd Do Differently** below.
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+No criterion is currently missed — all five were MET before the change and
+all five are still MET after it. But "nothing missed" isn't the same as
+"nothing left," and three real gaps remain:
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
+1. **The 5 graded questions still don't test the risk the criteria were
+   written for.** I didn't add a 6th question or rewrite `questions.py`,
+   because the one allowed change this unit was the retrieval improvement,
+   not the test suite — but that means my actual evidence that hybrid search
+   helps is one hand-built probe question, not a graded, repeatable
+   measurement. If I revisit this system again, the test suite itself needs
+   a question shaped like the near-duplicate risk (an exact number or term
+   shared oddly with a wrong-but-related document), or criteria 1/3/5 will
+   keep reading as "safely met" indefinitely without ever being challenged.
 
-     Milestone 5. -->
+2. **`HYBRID_ALPHA = 0.5` is a reasonable starting guess, not a tuned
+   value.** I picked it because it weights both signals equally and didn't
+   see evidence pushing it either direction — but I only tested it against
+   one probe question. I don't know whether 0.5 is actually the right
+   balance, whether it would hurt a question that's *purely* about meaning
+   with no exact-term overlap at all, or where the failure point is as
+   BM25's weight increases. I stopped here because measuring that properly
+   needs more than one stress question, and building a second real test
+   case was more time than this unit's scope covers.
+
+3. **I only checked that hybrid search doesn't break the 5 graded
+   questions' top-1 result and the gate's global-minimum distance — I did
+   not check whether it changed anything else retrieval-adjacent**, like
+   whether a *generation*-level answer quality shifted because the 2nd–5th
+   ranked chunks in the prompt context are now different documents (BM25
+   pulled in things like `transit_walking.txt` for the Kestrel Commons
+   question that weren't in the original top-5 at all). The answers still
+   came out correct and cited the right source in every run, but a noisier
+   context is a real risk I noticed and didn't fully chase down.
+
+I stopped here because this unit's scope is one measured improvement, not
+a full tuning pass, and I have honest evidence the fix does something real
+(the probe) without evidence it's been properly calibrated.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
+**Criterion 1 and criterion 5** are the ones I'd rewrite. Both are currently
+written as "for at least 4 of my 5 test questions" — but Milestone 3's
+diagnosis showed the real problem isn't the *rate*, it's that all 5
+questions share one property (naming a distinctive proper noun) that keeps
+them away from the actual risk the criteria describe. A criterion that's
+"4 of 5" over a test set that structurally can't produce the failure it's
+worried about isn't measuring anything — it's guaranteed to pass regardless
+of whether retrieval is actually robust to near-duplicates.
 
-     Milestone 5. -->
+Next time I'd write it as something like: *"For at least 4 of 5 test
+questions where the correct document shares a near-identical template with
+at least one other document in the corpus, the top-ranked retrieved chunk's
+source is the correct one."* That forces the test set itself to include
+questions that don't name a distinguishing entity — exactly the
+`$13.00`-style probe I only built after the fact this unit, as a stress test
+rather than as one of my graded criteria. Writing the criterion around the
+risk instead of around a generic "4 of 5" rate would have caught, in
+Milestone 1 rather than in an ad-hoc Milestone 4 probe, that the system's
+real behavior on its stated risk had never actually been measured.
