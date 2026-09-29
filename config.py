@@ -48,6 +48,14 @@ TOP_K = 5               # how many chunks to pull back per question
 # Most corpora land somewhere between 0.45 and 0.75.
 THRESHOLD = 0.6
 
+# ─── Hybrid search (Unit 2's improvement) ───────────────────────────────────
+# store.py::search blends embedding similarity with BM25 keyword overlap so a
+# question turning on an exact term (a number, a course code) isn't lost to a
+# same-topic near-duplicate document that only matches on meaning. Weight on
+# the semantic score; BM25 gets (1 - this). 0.5 means neither signal dominates
+# by default — see README's "The Improvement" for why this corpus needed it.
+HYBRID_ALPHA = 0.5
+
 
 # ─── Models ──────────────────────────────────────────────────────────────────
 # Embeddings run on your own machine and cost no API quota.

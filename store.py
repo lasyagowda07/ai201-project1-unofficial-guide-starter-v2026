@@ -28,6 +28,7 @@ from dataclasses import dataclass
 os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 import chromadb  # noqa: E402
+from rank_bm25 import BM25Okapi
 
 import config
 from chunker import Chunk
@@ -178,6 +179,21 @@ def build_index(
     return len(chunks)
 
 
+def _tokenize(text: str) -> list[str]:
+    """Lowercase word tokens for BM25. Good enough for short campus_life posts."""
+    import re
+
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _normalize(values: list[float]) -> list[float]:
+    """Min-max scale to [0, 1]. A flat list (no spread) scales to all zeros."""
+    lo, hi = min(values), max(values)
+    if hi - lo < 1e-9:
+        return [0.0] * len(values)
+    return [(v - lo) / (hi - lo) for v in values]
+
+
 def search(
     question: str,
     top_k: int | None = None,
@@ -185,9 +201,28 @@ def search(
     variant: str = "default",
 ) -> list[Result]:
     """
-    Retrieve the chunks closest in meaning to a question.
+    Retrieve the chunks most relevant to a question, hybrid-ranked.
 
-    Returns them nearest-first, each with its distance.
+    This unit's improvement (see README's "The Improvement"): semantic search
+    alone matches on meaning, which glides right past this corpus's templated
+    near-duplicate documents when a question turns on an exact term rather
+    than a topic — a number, a room, a course code. Keyword search (BM25)
+    catches exactly that case, so this blends both signals rather than
+    relying on either alone.
+
+    How: every chunk in the collection is scored two ways against the
+    question — cosine similarity from the embedding model, and BM25 over
+    word overlap — each min-max normalized to [0, 1], then combined as
+    `config.HYBRID_ALPHA * semantic + (1 - config.HYBRID_ALPHA) * bm25`.
+    Ranking uses the combined score; the `distance` on each returned `Result`
+    is still the untouched cosine distance, because `gate.py`'s threshold was
+    calibrated against cosine distance specifically, and the gate only reads
+    the global best distance — which doesn't depend on re-ranking order, only
+    on scanning the whole collection, which this already does.
+
+    Corpus-sized assumption: this re-scores every chunk in the collection
+    rather than re-ranking only an ANN shortlist. Fine at 88 chunks; would
+    need a shortlist step first on a much larger corpus.
     """
     top_k = top_k or config.TOP_K
     name = config.collection_name(corpus, variant)
@@ -199,21 +234,40 @@ def search(
             f"No index called '{name}'. Run `python app.py index` first."
         ) from exc
 
+    total = collection.count()
     raw = collection.query(
         query_embeddings=embed([question]),
-        n_results=min(top_k, collection.count()),
+        n_results=total,
     )
 
+    texts = raw["documents"][0]
+    metas = raw["metadatas"][0]
+    distances = [float(d) for d in raw["distances"][0]]
+
+    semantic_similarity = _normalize([-d for d in distances])  # lower distance = higher similarity
+
+    bm25 = BM25Okapi([_tokenize(t) for t in texts])
+    bm25_scores = _normalize(list(bm25.get_scores(_tokenize(question))))
+
+    combined = [
+        config.HYBRID_ALPHA * sem + (1 - config.HYBRID_ALPHA) * kw
+        for sem, kw in zip(semantic_similarity, bm25_scores)
+    ]
+
+    ranked = sorted(
+        zip(texts, metas, distances, combined),
+        key=lambda row: row[3],
+        reverse=True,
+    )[: min(top_k, total)]
+
     results: list[Result] = []
-    for text, meta, distance in zip(
-        raw["documents"][0], raw["metadatas"][0], raw["distances"][0]
-    ):
+    for text, meta, distance, _score in ranked:
         results.append(
             Result(
                 text=text,
                 source=str(meta.get("source", "unknown")),
                 label=f"{meta.get('source', 'unknown')}#{meta.get('index', 0)}",
-                distance=float(distance),
+                distance=distance,
                 produced_by=str(meta.get("produced_by", "unknown")),
             )
         )

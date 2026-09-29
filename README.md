@@ -351,34 +351,98 @@ questions.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** `store.py::search` now ranks retrieval results with
+hybrid search instead of pure semantic search. Every chunk in the collection
+is scored two ways against the question — cosine similarity from the
+embedding model, and BM25 keyword overlap (`rank_bm25.BM25Okapi`, already in
+`requirements.txt`) — each min-max normalized to `[0, 1]`, then blended as
+`config.HYBRID_ALPHA * semantic + (1 - config.HYBRID_ALPHA) * bm25` with
+`HYBRID_ALPHA = 0.5`. The `distance` field on each `Result` is still the
+untouched cosine distance — `gate.py`'s 0.6 cutoff was calibrated against
+cosine distance specifically, and the gate only reads the global best
+distance, which doesn't change with re-ranking. Only ranking/selection order
+changed.
 
-**Why I picked it:**
-
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+**Why I picked it:** My diagnosis found no misses, but traced *why* — every
+one of my 5 test questions names a distinctive proper noun, so none of them
+actually stress the templated near-duplicate risk (`dining_*.txt`,
+`housing_*_noise.txt`, `course_*` triples) that criteria 1/3/5 were written
+to catch. Hybrid search directly targets that risk: it's supposed to help
+exactly when a question turns on an exact term (a number, a name) that these
+near-identical documents differ on, which semantic-only search can glide
+past.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+Produced by `python run_eval.py --label after`, raw output in
+[`results/run_2026-09-28_2127_after.md`](results/run_2026-09-28_2127_after.md).
+Same 5 `QUESTIONS`, same 5 `OUT_OF_SCOPE`, same scorer, same format as before.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunk-to-document ratio | 95% 1:1 | 100% | 100% | 100% | MET |
+| 5. Top-1 source-attribution precision | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+
+Identical to the before table, question for question. Top-1 for all 5
+questions is still the correct document (verified again with
+`app.py retrieve`, same method as Milestone 1), and the out-of-scope gate
+still refuses 5 of 5 at the same distances (0.825–0.934, ±0.026 from a
+different re-ranking of ties beyond the gate's threshold — the gate itself
+is unaffected, as designed).
 
 **Did it help?**
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+**On the 5 graded questions: no measurable difference**, and I predicted
+that honestly before running it, because none of them stress the risk
+hybrid search targets — the diagnosis said so before I made the change.
+That's not nothing, but it's also not evidence the change works.
 
-     Milestone 4. -->
+**So I built a stress-test probe question to actually check**, using a
+pattern criteria.md itself calls out — dining hall posts that share almost
+every sentence except one dollar figure:
+
+```
+Which dining hall charges $13.00 cash for a meal without a swipe?
+```
+
+`dining_north_kitchen.txt` is the only document containing "$13.00 cash."
+Comparing the two ranking methods on the exact same retrieved candidates:
+
+```
+PURE SEMANTIC top 3 (this unit's "before" logic):
+0.5083  admin_dining_dollars.txt        <- WRONG. Topically about "dining
+                                            dollars" (a meal-plan balance
+                                            system), not about a specific
+                                            hall's cash price. No $13.00
+                                            anywhere in it.
+0.5132  dining_north_kitchen.txt        <- correct document, ranked 2nd
+0.5612  dining_halden_hall.txt
+
+HYBRID top 3 (this unit's improvement):
+0.9959  dining_north_kitchen.txt        <- correct document, now top-1
+0.8764  dining_halden_hall.txt
+0.8730  dining_pellew_dining_hall.txt
+```
+
+Pure semantic search put the wrong document at top-1 on this probe —
+`admin_dining_dollars.txt` talks about balances and semesters, not a
+specific hall's price, but embeds close enough to "dining hall charges cash"
+to win anyway. That's a real, concrete instance of the exact failure mode
+criteria 1 and 5 were written to catch; my 5 official test questions just
+never happened to trigger it. Hybrid search fixed it on this probe by
+weighting the literal "$13.00" keyword match, which pure semantic similarity
+had no way to reward.
+
+**Honest bottom line:** the improvement did not move any of my 5 graded
+criteria (they were already at ceiling), but it measurably fixed a top-1
+ranking error on a constructed question that exercises the corpus's actual
+known risk. Whether that's worth shipping depends on whether future
+questions look more like my 5 (named entities, hybrid search irrelevant) or
+more like the probe (exact terms, hybrid search load-bearing) — see **What's
+Still Broken** and **What I'd Do Differently** below.
 
 ## What's Still Broken
 
