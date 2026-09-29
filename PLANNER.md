@@ -105,55 +105,55 @@ stays exactly as Unit 1 left it until then.
 
 ## Milestone 1 — Run the test (~40 min)
 
-- [ ] Build `scorer.py` with `judge(question, expects, answer, results) -> bool`
+- [x] Build `scorer.py` with `judge(question, expects, answer, results) -> bool`
       — `run_eval.py::load_scorer()` already looks for this and falls back to
       unscored if it's missing. Simplest honest version: case-insensitive
       substring check of `expects` against the generated `answer`, which is
       exactly what `questions.py`'s docstring says `expects` is for.
-- [ ] `python run_eval.py --label before` — runs all 5 `QUESTIONS` three times
+- [x] `python run_eval.py --label before` — runs all 5 `QUESTIONS` three times
       each (cache off) and all 5 `OUT_OF_SCOPE` once through the gate; writes
       a per-question table + full transcript into `results/`.
-- [ ] Commit the generated `results/run_..._before.md` file — it's the
+- [x] Commit the generated `results/run_..._before.md` file — it's the
       evidence the run happened.
-- [ ] Turn the per-question table into the README's per-criterion table
+- [x] Turn the per-question table into the README's per-criterion table
       (Run Log — Before): criterion 1 = how many of the 5 questions had the
       answer inside the retrieved chunks (read `results:` in the transcript,
       not just the pass/fail column — criterion 1 is about chunks, the
       scorer judges the final answer, they're related but not identical).
       Criterion 4 (chunk:doc ratio) and criterion 5 (top-1 source precision)
       need to be computed by hand from the same transcript, same as Unit 1.
-- [ ] Paste real output (not a description) under the table, naming the file
+- [x] Paste real output (not a description) under the table, naming the file
       + function that produced it.
-- [ ] Commit **(1 of 4 required this unit)**.
+- [x] Commit **(1 of 4 required this unit)**.
 
 ## Milestone 2 — Call each criterion (~45 min)
 
-- [ ] MET or MISSED per criterion, against the Unit 1 target in `criteria.md`
+- [x] MET or MISSED per criterion, against the Unit 1 target in `criteria.md`
       (not a new target). One sentence per criterion on how the call was made.
-- [ ] If a criterion turns out to be unmeasurable (not just missed), revise it
+- [x] If a criterion turns out to be unmeasurable (not just missed), revise it
       per `criteria.md`'s own trailing comment block — add the revision
       underneath the original, never edit/delete the original line.
-- [ ] Commit **(2 of 4 required)**.
+- [x] Commit **(2 of 4 required)**.
 
 ## Milestone 3 — Diagnose every miss (~45 min)
 
-- [ ] For each MISSED criterion, name the pipeline stage (loading / chunking
+- [x] For each MISSED criterion, name the pipeline stage (loading / chunking
       / embedding / retrieval / generation) and the mechanism — not "it got
       it wrong." Use the two-minute check from the PDF: if the answer isn't
       in any retrieved chunk, the problem is pre-generation; if it's in a
       chunk and still came out wrong, it's generation.
-- [ ] Look for one shared pattern across misses before writing individual
+- [x] Look for one shared pattern across misses before writing individual
       diagnoses. `campus_life`'s known risk (flagged back in Unit 1): the
       templated near-duplicate groups — `dining_*.txt` (6), `housing_*_noise.txt`
       (6), `course_<code>.txt` / `_exams` / `_workload` triples — check here
       first if a wrong-source citation shows up.
-- [ ] If nothing was missed, say so, and name which criterion was probably
+- [x] If nothing was missed, say so, and name which criterion was probably
       set too soft and what you'd tighten it to.
-- [ ] Commit **(3 of 4 required)**.
+- [x] Commit **(3 of 4 required)**.
 
 ## Milestone 4 — Fix one thing and measure it (~90 min)
 
-- [ ] Pick the ONE improvement the diagnosis actually points at. Likely
+- [x] Pick the ONE improvement the diagnosis actually points at. Likely
       candidates given this corpus:
       - **Hybrid search (BM25 + embeddings)** — `rank-bm25` is already in
         `requirements.txt`, no install needed. Most likely fix if misses trace
@@ -165,27 +165,27 @@ stays exactly as Unit 1 left it until then.
         boundary problem.
       - Something narrower the diagnosis points at instead: `TOP_K`, the
         gate `THRESHOLD`, or `GROUNDING_INSTRUCTION` in `generate.py`.
-- [ ] Implement only that one change.
-- [ ] `python run_eval.py --label after` — same 5 questions, same 5
+- [x] Implement only that one change.
+- [x] `python run_eval.py --label after` — same 5 questions, same 5
       out-of-scope, three runs.
-- [ ] Put both run logs (before/after) in the README side by side under
+- [x] Put both run logs (before/after) in the README side by side under
       **The Improvement**, and say plainly whether it helped — a backfire,
       honestly reported, is a complete answer.
-- [ ] Commit **(4 of 4 required — minimum met)**.
+- [x] Commit **(4 of 4 required — minimum met)**.
 
 ## Milestone 5 — Say what's still broken, and submit (~45 min)
 
-- [ ] Write **What's Still Broken**: for each still-missed criterion, what
+- [x] Write **What's Still Broken**: for each still-missed criterion, what
       you'd do next and why you stopped here. "Ran out of time" is fine if
       true; pretending nothing's left is not.
-- [ ] Write **What I'd Do Differently**: which of the 5 criteria you'd write
+- [x] Write **What I'd Do Differently**: which of the 5 criteria you'd write
       differently next time, and why.
-- [ ] Update **How I Used AI** with anything new from this unit (e.g. using a
+- [x] Update **How I Used AI** with anything new from this unit (e.g. using a
       model to propose failure hypotheses before checking which was real).
       **Hold this section for the user's review before committing/pushing it**
       — standing instruction, don't push it unreviewed.
-- [ ] Verify: `criteria.md` unchanged except additive revisions; all 6 new
+- [x] Verify: `criteria.md` unchanged except additive revisions; all 6 new
       README sections filled; ≥4 new commits this unit; `results/` has the
       before/after run-log files committed.
-- [ ] Push (no Claude co-authorship in the commit messages — standing
+- [x] Push (no Claude co-authorship in the commit messages — standing
       instruction). Submit the same repo URL as Unit 1 (user action).
