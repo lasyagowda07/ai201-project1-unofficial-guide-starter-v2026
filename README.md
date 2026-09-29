@@ -197,66 +197,157 @@ written on my own.
 
 ## Run Log — Before
 
-<!-- Your five criteria, three runs each. `python run_eval.py --label before`
-     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
-     writes it all into results/ for you. Targets come from criteria.md; the
-     verdict column is your call.
+Produced by `python run_eval.py --label before` on 2026-09-28, raw output in
+[`results/run_2026-09-28_2120_before.md`](results/run_2026-09-28_2120_before.md).
+`scorer.py::judge` (built this unit) marks each run's answer pass/fail by
+checking whether the `expects` phrase from `questions.py` is present in the
+generated answer, case-insensitively.
 
-     Criterion 3 is measured in one deterministic pass rather than three, so
-     the same number goes in all three run columns. That's correct, not lazy.
-
-     Milestone 1. -->
+Criteria 3, 4 and 5 don't vary between runs: criterion 3 is one deterministic
+pass through the gate (`run_eval.py::check_out_of_scope`), and criteria 4 and
+5 depend only on retrieval, which is deterministic for a fixed corpus and
+question — running the same question three times returns the same chunks in
+the same order every time, so there's one number for each, not three.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunk-to-document ratio | 95% 1:1 | 100% | 100% | 100% | MET |
+| 5. Top-1 source-attribution precision | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+**Real output, one per criterion:**
+
+**Criterion 1** — `store.py::search`, question "Does unused printing quota
+roll over to the next semester?", top-ranked chunk:
+
+```
+[from admin_printing_quota.txt]
+On the printing quota
+
+Every student gets $30 of printing per semester, which is roughly 600
+black-and-white pages. It does not roll over. Colour costs eight times as
+much per page, which people discover after printing one poster.
+```
+
+The `expects` phrase ("does not roll over") is right there in the top chunk.
+All 5 questions retrieved a chunk containing their `expects` phrase, on all
+3 runs — retrieval doesn't change between runs, only generation does.
+
+**Criterion 2** — `generate.py::answer_from_chunks`, question "What is the
+latest I can declare a course pass/fail?", run 1:
+
+```
+You can declare a course pass/fail as late as week eight, after you've seen
+your midterm.
+
+Source: admin_pass_fail_option.txt
+```
+
+Every one of the 15 answers (5 questions × 3 runs) named at least one source
+filename. `GROUNDING_INSTRUCTION` in `generate.py` requires it, and nothing
+in this run broke that.
+
+**Criterion 3** — `gate.py::check` via `run_eval.py::check_out_of_scope`,
+full table from the run log:
+
+```
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.825 | refused |
+| How do I change the oil in a diesel engine? | 0.934 | refused |
+| Who won the 1994 World Cup? | 0.886 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.844 | refused |
+| How do I write a for loop in Rust? | 0.896 | refused |
+```
+
+All 5 refused, all comfortably above the 0.6 cutoff (lowest was 0.825).
+
+**Criterion 4** — `chunker.py::split_documents`, computed directly rather
+than eyeballed:
+
+```
+>>> from ingest import load_documents
+>>> from chunker import split_documents
+>>> docs = load_documents(); chunks = split_documents(docs)
+>>> len(docs), len(chunks)
+(88, 88)
+>>> pct 1:1: 100.0 %
+```
+
+No document produced more than one chunk — same result as Unit 1, confirmed
+again rather than assumed, since criterion 4 specifically asks about the
+chunker's current behavior, not last unit's number.
+
+**Criterion 5** — `app.py retrieve`, question "Are the midterms curved in
+CS 210?" (chosen because `course_cs_210.txt` / `course_cs_210_exams.txt` /
+`course_cs_210_workload.txt` is exactly the kind of near-duplicate triple
+criterion 5 was written to catch):
+
+```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.4287     course_cs_210_exams.txt          CS 210 Data Structures — assessment  Two midterms an...
+2   0.5821     course_phys_130_exams.txt        PHYS 130 Mechanics — assessment  Three midterms, no ...
+3   0.5941     course_math_220_exams.txt        MATH 220 Linear Algebra — assessment  Two midterms a...
+```
+
+Top-1 is `course_cs_210_exams.txt`, which contains "Midterms are curved" —
+the correct document, not a same-shaped wrong one. Checked all 5 questions
+this way (not just read off the alphabetically-sorted "sources retrieved"
+line in the run log, which doesn't reflect rank order): every top-1 chunk's
+source file literally contains its question's `expects` phrase.
 
 ## Verdicts
 
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     unit — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
-
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
-
-     Milestone 2. -->
-
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunks contain the answer (4 of 5) | MET | All 3 runs came back 5/5, not just once. I read the actual retrieved chunk text for each question (not just the source filename) and confirmed the `expects` phrase is present verbatim in at least one retrieved chunk every time. |
+| 2 | Every answer names a source (5 of 5) | MET | All 15 answers (5 questions × 3 runs) include a `Source:` line with a real filename from the corpus. No exceptions to check for a close call here. |
+| 3 | Gate stops out-of-corpus questions (4 of 5) | MET | 5 of 5 refused, and by a wide margin — the closest out-of-scope distance (0.825) is still 0.225 above the 0.6 cutoff, so this isn't a near miss that got lucky once. |
+| 4 | Chunk-to-document ratio (≥95% 1:1) | MET | Computed directly (88 docs → 88 chunks, 0 documents split), not eyeballed from the Unit 1 number. Comfortably over the 95% floor. |
+| 5 | Top-1 source-attribution precision (4 of 5) | MET | Checked the true distance-ordered top-1 result for all 5 questions with `app.py retrieve` (the run log's "sources retrieved" line is alphabetically sorted, not rank-ordered, so I didn't trust that alone). Every top-1 document literally contains its question's `expects` phrase, including on the CS 210 and Old Brewhouse questions where a same-shaped wrong document was sitting right there in the top-5. |
+
+**All five criteria MET, on every run.** Per the assignment's own warning,
+that's a reason to look at whether the targets were set too soft, not a
+reason to feel good — see **What I'd Do Differently** for which one I'd
+tighten and why.
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+**Nothing was missed.** All five criteria came back MET on all three runs,
+with comfortable margins everywhere except criterion 2 (which had no margin
+to begin with — 5 of 5 was always all-or-nothing).
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+That's a result worth being suspicious of, not proud of, per the
+assignment's own warning. Looking at *why* it's this clean:
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+Criteria 1, 3, and 5 were all set at "4 of 5" specifically because
+`criteria.md`'s own reasoning names a real risk in this corpus — templated
+near-duplicate documents (`dining_*.txt` pairs, `housing_*_noise.txt` pages,
+`course_cs_210.txt`/`_exams`/`_workload` triples) that could plausibly
+outrank the correct document on a question that doesn't distinguish them.
+But every one of the 5 `QUESTIONS` I wrote in Unit 1 names a specific,
+distinctive proper noun or course code — "Kestrel Commons," "CS 210," "Old
+Brewhouse" — and MiniLM's embeddings separate those names cleanly. The
+distance gap between the correct document and its nearest same-shaped
+competitor was never smaller than ~0.12 (Old Brewhouse's own two docs, at
+0.308 vs 0.327) and was usually much larger (CS 210: 0.429 vs 0.582). **The
+near-duplicate risk the criteria were designed to catch never actually got
+tested**, because none of my questions were phrased ambiguously enough to
+put two near-duplicate documents in real competition for the top spot.
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
+This is a diagnosis of the *test*, not the *pipeline*: nothing in loading,
+chunking, embedding, retrieval, or generation is doing anything wrong on
+these 5 questions — retrieval is confidently and correctly separating even
+same-topic documents by a wide margin every time. The gap is that the test
+suite doesn't contain a question shaped like the failure mode the criteria
+were written to catch. See **What I'd Do Differently** for which criterion
+I'd tighten (and how) to actually exercise that risk next time, since I
+can't rewrite `questions.py` mid-unit to add one now — the one-change rule
+this unit is spent on the retrieval improvement below, not the test
+questions.
 
 ## The Improvement
 
