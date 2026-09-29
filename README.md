@@ -182,6 +182,29 @@ testing top-1 source attribution precision instead of a generic "chunks are
 relevant" claim — a more specific and more useful target than what I'd have
 written on my own.
 
+**3.** For Milestone 3, `run_eval.py` came back with all five criteria MET
+on every run. Before accepting that, I checked it against `criteria.md`'s
+own reasoning — criteria 1/3/5 were set at "4 of 5" specifically because of
+templated near-duplicate documents — and asked Claude to help me verify
+whether my 5 questions in `questions.py` could actually produce that kind
+of failure. Looking at them together, I noticed every question names a
+distinctive proper noun or course code, so none of them could ever land two
+near-duplicate documents in real competition for top-1. That's what turned
+my diagnosis into "the test never exercised the risk it was written for"
+rather than "nothing to fix," and it's what pointed my Milestone 4 choice
+at hybrid search instead of a made-up problem.
+
+**4.** For Milestone 4, I still needed to know whether hybrid search
+actually helped, since the graded criteria were already at ceiling and
+couldn't show a difference either way. I decided the fix needed a real
+stress test rather than trusting the theory, so I worked with Claude to
+design one: the four dining-hall documents differ almost only in their
+exact cash price ($10.00 / $11.75 / $12.50 / $13.00), so I built a question
+around one specific figure. Running that probe surfaced a real top-1
+ranking error in pure semantic search — it preferred an unrelated
+`admin_dining_dollars.txt` over the correct dining hall — that none of my
+official 5 questions ever caught, and confirmed hybrid search fixed it.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
